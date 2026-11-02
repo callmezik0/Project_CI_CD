@@ -49,7 +49,7 @@ def create_app():
         # V2 : filtre optionnel par statut, ex. /tickets?status=open
         status = request.args.get("status")
         tickets = [dict(t) for t in TICKETS if status is None or t["status"] == status]
-        return jsonify(tickets), 200
+        return jsonify({"items": tickets}), 200
 
     @app.get("/tickets/<int:ticket_id>")
     def get_ticket(ticket_id):
