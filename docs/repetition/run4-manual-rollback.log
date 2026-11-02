@@ -1,0 +1,5 @@
+[deploy 09:49:01Z] Retour arrière manuel : localhost:5000/novaservices-tickets@sha256:5fdaa8bf151131bd18fbbd15342b31d4d4509c166acff7ee07f344e07ff1168c -> localhost:5000/novaservices-tickets@sha256:902cf842118cd68eb94a18cafeb9085fee6f0c45839d6ee31efb76bf6e8ffca8
+[deploy 09:49:01Z] Conteneur novaservices démarré depuis localhost:5000/novaservices-tickets@sha256:902cf842118cd68eb94a18cafeb9085fee6f0c45839d6ee31efb76bf6e8ffca8
+[deploy 09:49:03Z] /version -> {"commit":"b0f057baafca","service":"novaservices-tickets","version":"1.0.0"}
+[deploy 09:49:03Z] Service sain sur le port 8090
+[deploy 09:49:03Z] RETOUR ARRIÈRE RÉUSSI : localhost:5000/novaservices-tickets@sha256:902cf842118cd68eb94a18cafeb9085fee6f0c45839d6ee31efb76bf6e8ffca8

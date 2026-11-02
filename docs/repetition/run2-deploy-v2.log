@@ -1,0 +1,9 @@
+7 passed in 0.04s
+OK  http://localhost:8081/health -> {"status":"ok"}
+published localhost:5000/novaservices-tickets:b16a9cceadb3 digest=sha256:5fdaa8bf151131bd18fbbd15342b31d4d4509c166acff7ee07f344e07ff1168c
+[deploy 09:48:34Z] Version en service : localhost:5000/novaservices-tickets@sha256:902cf842118cd68eb94a18cafeb9085fee6f0c45839d6ee31efb76bf6e8ffca8
+[deploy 09:48:34Z] Version à déployer : localhost:5000/novaservices-tickets@sha256:5fdaa8bf151131bd18fbbd15342b31d4d4509c166acff7ee07f344e07ff1168c
+[deploy 09:48:35Z] Conteneur novaservices démarré depuis localhost:5000/novaservices-tickets@sha256:5fdaa8bf151131bd18fbbd15342b31d4d4509c166acff7ee07f344e07ff1168c
+[deploy 09:48:37Z] /version -> {"commit":"b16a9cceadb3","service":"novaservices-tickets","version":"2.0.0"}
+[deploy 09:48:37Z] Service sain sur le port 8090
+[deploy 09:48:37Z] DÉPLOIEMENT RÉUSSI : localhost:5000/novaservices-tickets@sha256:5fdaa8bf151131bd18fbbd15342b31d4d4509c166acff7ee07f344e07ff1168c
