@@ -5,8 +5,8 @@
 | 1 | Fiche de choix | `docs/FICHE_CHOIX.md` | ☐ |
 | 2 | Branches, commits, PR | Lien PR `feature/version-api` + `git log --graph` | ☐ |
 | 3 | Tests, Dockerfile, workflow | `tests/`, `Dockerfile`, `.github/workflows/ci-cd.yml` | ☐ |
-| 4 | Pipeline **rouge** | Run sur le commit « régression volontaire » : test `test_tickets_returns_list_of_tickets` en échec, message `assert isinstance(data, list)` | ☐ |
-| 5 | Pipeline **vert** | Run sur le commit « Corrige la régression » | ☐ |
+| 4 | Pipeline **rouge** | PR `feature/v2-filtre-statut`, run sur le commit « régression volontaire » : test `test_tickets_returns_list_of_tickets` en échec, message `assert isinstance(data, list)` | ☐ |
+| 5 | Pipeline **vert** | Même PR, run sur le commit « Corrige la régression » | ☐ |
 | 6 | Image + digest publiés | Résumé du job *Image Docker* sur main (image, digest, commit) + page Packages GHCR | ☐ |
 | 7 | Application sur la VM | `curl http://VM:8080/version` → commit = SHA fusionné | ☐ |
 | 8 | Mise à jour V2 | `/version` → `2.0.0` + nouveau commit | ☐ |
