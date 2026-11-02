@@ -13,12 +13,36 @@ TICKETS = [
 ]
 
 
+def _read_version_file():
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return fh.read().strip()
+    except OSError:
+        return "0.0.0-dev"
+
+
 def create_app():
     app = Flask(__name__)
+    # Injectées à la construction de l'image (build-args -> ENV) ; valeurs locales sinon.
+    app.config["APP_VERSION"] = os.environ.get("APP_VERSION") or _read_version_file()
+    app.config["GIT_SHA"] = os.environ.get("GIT_SHA", "local")
+    # Interrupteur réservé au TP (étape 13) : simule un service qui ne passe pas le contrôle HTTP.
+    app.config["SIMULATE_FAILURE"] = os.environ.get("SIMULATE_FAILURE", "0") == "1"
 
     @app.get("/health")
     def health():
+        if app.config["SIMULATE_FAILURE"]:
+            return jsonify(status="error", reason="simulated failure"), 503
         return jsonify(status="ok"), 200
+
+    @app.get("/version")
+    def version():
+        return jsonify(
+            service="novaservices-tickets",
+            version=app.config["APP_VERSION"],
+            commit=app.config["GIT_SHA"],
+        ), 200
 
     @app.get("/tickets")
     def list_tickets():

@@ -1,0 +1,23 @@
+7 passed in 0.03s
+OK  http://localhost:8081/health -> {"status":"ok"}
+published localhost:5000/novaservices-tickets:b16a9cceadb3 digest=sha256:c2a5dc29ec063246aefecc3eea00ff474b01566f36aefefc38c8968f074d35c0
+[deploy 09:48:47Z] Version en service : localhost:5000/novaservices-tickets@sha256:5fdaa8bf151131bd18fbbd15342b31d4d4509c166acff7ee07f344e07ff1168c
+[deploy 09:48:47Z] Version à déployer : localhost:5000/novaservices-tickets@sha256:c2a5dc29ec063246aefecc3eea00ff474b01566f36aefefc38c8968f074d35c0
+[deploy 09:48:48Z] Conteneur novaservices démarré depuis localhost:5000/novaservices-tickets@sha256:c2a5dc29ec063246aefecc3eea00ff474b01566f36aefefc38c8968f074d35c0
+[deploy 09:48:58Z] ÉCHEC : /health ne répond pas en 200 après 10s
+[deploy 09:48:58Z] Journaux du conteneur en échec (copie dans /tmp/claude-0/-home-user/fca2ef2e-f683-5069-9f26-cb40dfe1e05f/scratchpad/vm-state/logs/failed-20261102T094858Z.log) :
+    | [2026-11-02 09:48:48 +0000] [1] [INFO] Starting gunicorn 23.0.0
+    | [2026-11-02 09:48:48 +0000] [1] [INFO] Listening at: http://0.0.0.0:8000 (1)
+    | [2026-11-02 09:48:48 +0000] [1] [INFO] Using worker: sync
+    | [2026-11-02 09:48:48 +0000] [7] [INFO] Booting worker with pid: 7
+    | [2026-11-02 09:48:48 +0000] [8] [INFO] Booting worker with pid: 8
+    | 172.17.0.1 - - [02/Nov/2026:09:48:50 +0000] "GET /health HTTP/1.1" 503 48 "-" "curl/8.5.0"
+    | 172.17.0.1 - - [02/Nov/2026:09:48:52 +0000] "GET /health HTTP/1.1" 503 48 "-" "curl/8.5.0"
+    | 172.17.0.1 - - [02/Nov/2026:09:48:54 +0000] "GET /health HTTP/1.1" 503 48 "-" "curl/8.5.0"
+    | 172.17.0.1 - - [02/Nov/2026:09:48:56 +0000] "GET /health HTTP/1.1" 503 48 "-" "curl/8.5.0"
+    | 172.17.0.1 - - [02/Nov/2026:09:48:58 +0000] "GET /health HTTP/1.1" 503 48 "-" "curl/8.5.0"
+[deploy 09:48:58Z] RETOUR ARRIÈRE vers localhost:5000/novaservices-tickets@sha256:5fdaa8bf151131bd18fbbd15342b31d4d4509c166acff7ee07f344e07ff1168c
+[deploy 09:48:58Z] Conteneur novaservices démarré depuis localhost:5000/novaservices-tickets@sha256:5fdaa8bf151131bd18fbbd15342b31d4d4509c166acff7ee07f344e07ff1168c
+[deploy 09:49:01Z] /version -> {"commit":"b16a9cceadb3","service":"novaservices-tickets","version":"2.0.0"}
+[deploy 09:49:01Z] Service sain sur le port 8090
+[deploy 09:49:01Z] Retour arrière réussi : le service est rétabli. Le déploiement reste en ÉCHEC.
