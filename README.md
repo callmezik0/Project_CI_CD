@@ -63,7 +63,7 @@ git --version && python3 --version && docker --version && docker info >/dev/null
 
 ### Étapes 3–4 – Récupérer et lancer
 ```bash
-git clone https://github.com/<OWNER>/novaservices-tickets.git && cd novaservices-tickets
+git clone https://github.com/callmezik0/Project_CI_CD.git && cd Project_CI_CD
 python3 -m venv .venv && source .venv/bin/activate     # Windows : .venv\Scripts\Activate.ps1
 python -m pip install -r requirements-dev.txt
 python app.py
@@ -92,7 +92,7 @@ committer, pousser → job **Tests** rouge. Annuler la modification, pousser →
 
 **Protéger `main`** (sinon un job rouge n'empêche pas la fusion) :
 ```bash
-./scripts/protect-main.sh <OWNER>/novaservices-tickets
+./scripts/protect-main.sh callmezik0/Project_CI_CD
 ```
 Contrôles requis : `Tests (pytest)` et `Image Docker` ; `enforce_admins` empêche le contournement.
 
@@ -116,12 +116,13 @@ Prérequis VM (préparés par le formateur) : Docker, `curl`, utilisateur de dé
 Sur le poste, une fois (droits admin sur le dépôt) :
 ```bash
 ssh -i ~/.ssh/tp_deploy deploy@<IP_VM> 'docker info >/dev/null && echo Docker OK sur la VM'
-./scripts/setup-github.sh <OWNER>/novaservices-tickets <IP_VM> deploy 8080 ~/.ssh/tp_deploy
+./scripts/setup-github.sh callmezik0/Project_CI_CD <IP_VM> deploy 8080 ~/.ssh/tp_deploy
 ```
-Le script crée l'environnement `preprod`, les variables `DEPLOY_HOST`, `DEPLOY_USER`, `APP_PORT`,
+Le script crée l'environnement `preprod`, les variables **du dépôt** `DEPLOY_HOST`, `DEPLOY_USER`, `APP_PORT`,
 `DEPLOY_SSH_PORT`, les secrets `DEPLOY_SSH_KEY` et `DEPLOY_KNOWN_HOSTS`, et demande de **confirmer
 l'empreinte** contre celle du formateur. Si la VM est seulement dans le réseau de l'école :
 `gh variable set DEPLOY_RUNNER --body self-hosted`.
+Tant que `DEPLOY_HOST` n'est pas défini, le job de déploiement est **ignoré** (pas en échec).
 
 ### Étape 12 – Déploiement automatique
 Fusionner la PR → `test` → `build` (publie) → `deploy` :
