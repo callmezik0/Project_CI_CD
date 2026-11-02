@@ -44,3 +44,10 @@ def test_simulated_failure_makes_health_fail(monkeypatch):
     monkeypatch.setenv("SIMULATE_FAILURE", "1")
     resp = create_app().test_client().get("/health")
     assert resp.status_code == 503
+
+
+def test_tickets_can_be_filtered_by_status(client):
+    resp = client.get("/tickets?status=open")
+    assert resp.status_code == 200
+    assert [t["id"] for t in resp.get_json()] == [1]
+    assert client.get("/tickets?status=unknown").get_json() == []
