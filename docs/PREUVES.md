@@ -24,3 +24,13 @@ déploiement ne s'exécutent pas, et la protection de `main` interdit la fusion.
 Le cycle a été rejoué de bout en bout avec un registre local à la place de GHCR et l'hôte local à
 la place de la VM : voir `docs/repetition/` (déploiement V1, V2, échec simulé + retour arrière auto,
 retour arrière manuel).
+
+## Incident réel pendant le TP : fusion d'une PR rouge
+La PR #2 a été fusionnée alors que son dernier run était **rouge** (commit « régression volontaire »),
+car `main` n'était pas encore protégée. Conséquences observées :
+- le run sur `main` (#5) a échoué au job *Tests* : **aucune image publiée, aucun déploiement** — la chaîne s'est bien arrêtée ;
+- `main` contenait néanmoins du code cassé.
+
+Correction : nouvelle branche `fix/regression-tickets` + PR (une PR fusionnée n'est jamais réutilisée).
+Leçon, conforme au TP : un job rouge ne bloque la fusion que si la **protection de branche** exige
+les contrôles (`scripts/protect-main.sh`, avec `enforce_admins` pour empêcher le contournement).
