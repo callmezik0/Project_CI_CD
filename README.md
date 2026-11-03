@@ -35,6 +35,7 @@ Application Flask minimale (données fictives) et chaîne CI/CD complète :
 | Contrôle HTTP en échec après déploiement | Journaux affichés, retour automatique au digest précédent, job **rouge** |
 | `workflow_dispatch` `action=deploy`, `simulate_failure=true` | Étape 13 : simule un `/health` en 503 |
 | `workflow_dispatch` `action=rollback` | Redéploie le digest précédent enregistré sur la VM |
+| `workflow_dispatch` `action=redeploy`, `image_tag=<commit 12 car.>` | Remet en service une image **déjà publiée** (digest résolu dans GHCR, sans reconstruction) |
 
 ## Arborescence
 
@@ -147,6 +148,10 @@ PR → fusion → `/version` affiche `2.0.0`. Puis **Actions → CI/CD NovaServi
 avec `simulate_failure` coché : `/health` répond 503, le job affiche les journaux, restaure le
 digest sain et termine **en échec**. Pour revenir en V1 : *Run workflow* avec `action=rollback`.
 Sur la VM : `bash ~/deploy.sh status` affiche les digests `current` / `previous`.
+
+Si la VM n'a connu que la V2 (premier déploiement fait après la fusion de la V2), elle n'a pas de
+version précédente : remettre d'abord la V1 en service (`action=redeploy`, `image_tag` = commit de
+la V1), puis la V2 (`image_tag` = commit de la V2), avant l'échec simulé et le retour arrière.
 
 ---
 
