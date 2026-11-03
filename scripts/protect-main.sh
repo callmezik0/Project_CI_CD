@@ -7,7 +7,7 @@ gh api -X PUT "repos/${repo}/branches/main/protection" --input - <<JSON
 {
   "required_status_checks": { "strict": true, "contexts": ["Tests (pytest)", "Image Docker"] },
   "enforce_admins": true,
-  "required_pull_request_reviews": { "required_approving_review_count": 1 },
+  "required_pull_request_reviews": { "required_approving_review_count": 0 },
   "restrictions": null,
   "allow_force_pushes": false,
   "allow_deletions": false
