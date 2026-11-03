@@ -1,2 +1,5 @@
 -r requirements.txt
 pytest==8.4.2
+# Qualité du code (configuration dans pyproject.toml)
+ruff==0.16.9
+black==26.5.1
