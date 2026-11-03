@@ -72,8 +72,13 @@ Contrôler `http://localhost:8000/health`, `/version`, `/tickets`.
 
 ### Étape 5 – Tests
 ```bash
+python -m black --check .  # formatage (black reformate avec : python -m black .)
+python -m ruff check .     # analyse statique, toutes les règles ruff (select = ["ALL"])
 python -m pytest -q        # 7 passed
 ```
+Configuration des deux outils dans `pyproject.toml` (lignes de 100 caractères, Python 3.12).
+Le job `Tests (pytest)` exécute ces trois commandes : un code mal formaté ou signalé par ruff
+bloque la PR comme un test en échec.
 Ces tests ne vérifient ni le démarrage de l'image ni le réseau de la VM : c'est le rôle du
 contrôle HTTP du job `build` (étape 9) et de `deploy.sh` + contrôle depuis le runner (étape 12).
 

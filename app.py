@@ -1,28 +1,47 @@
+# Copyright (c) 2026 callmezik0 - TP CI/CD EPSI B4 Infra.
 """NovaServices - API de tickets informatiques (application du TP CI/CD).
 
 Données fictives, stockées en mémoire : le périmètre est volontairement court.
 """
-import os
 
-from flask import Flask, abort, jsonify, request
+import os
+from pathlib import Path
+
+from flask import Flask, Response, abort, jsonify, request
 
 TICKETS = [
-    {"id": 1, "title": "Imprimante du 2e étage hors ligne", "status": "open", "priority": "high"},
-    {"id": 2, "title": "Création d'un compte pour un nouvel arrivant", "status": "in_progress", "priority": "medium"},
-    {"id": 3, "title": "Écran secondaire qui scintille", "status": "closed", "priority": "low"},
+    {
+        "id": 1,
+        "title": "Imprimante du 2e étage hors ligne",
+        "status": "open",
+        "priority": "high",
+    },
+    {
+        "id": 2,
+        "title": "Création d'un compte pour un nouvel arrivant",
+        "status": "in_progress",
+        "priority": "medium",
+    },
+    {
+        "id": 3,
+        "title": "Écran secondaire qui scintille",
+        "status": "closed",
+        "priority": "low",
+    },
 ]
 
+VERSION_FILE = Path(__file__).resolve().parent / "VERSION"
 
-def _read_version_file():
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "VERSION")
+
+def _read_version_file() -> str:
     try:
-        with open(path, encoding="utf-8") as fh:
-            return fh.read().strip()
+        return VERSION_FILE.read_text(encoding="utf-8").strip()
     except OSError:
         return "0.0.0-dev"
 
 
-def create_app():
+def create_app() -> Flask:
+    """Construit l'application Flask et déclare ses routes."""
     app = Flask(__name__)
     # Injectées à la construction de l'image (build-args -> ENV) ; valeurs locales sinon.
     app.config["APP_VERSION"] = os.environ.get("APP_VERSION") or _read_version_file()
@@ -31,35 +50,38 @@ def create_app():
     app.config["SIMULATE_FAILURE"] = os.environ.get("SIMULATE_FAILURE", "0") == "1"
 
     @app.get("/health")
-    def health():
+    def health() -> tuple[Response, int]:
         if app.config["SIMULATE_FAILURE"]:
             return jsonify(status="error", reason="simulated failure"), 503
         return jsonify(status="ok"), 200
 
     @app.get("/version")
-    def version():
-        return jsonify(
-            service="novaservices-tickets",
-            version=app.config["APP_VERSION"],
-            commit=app.config["GIT_SHA"],
-        ), 200
+    def version() -> tuple[Response, int]:
+        return (
+            jsonify(
+                service="novaservices-tickets",
+                version=app.config["APP_VERSION"],
+                commit=app.config["GIT_SHA"],
+            ),
+            200,
+        )
 
     @app.get("/tickets")
-    def list_tickets():
+    def list_tickets() -> tuple[Response, int]:
         # V2 : filtre optionnel par statut, ex. /tickets?status=open
         status = request.args.get("status")
         tickets = [dict(t) for t in TICKETS if status is None or t["status"] == status]
         return jsonify(tickets), 200
 
     @app.get("/tickets/<int:ticket_id>")
-    def get_ticket(ticket_id):
-        for ticket in TICKETS:
-            if ticket["id"] == ticket_id:
-                return jsonify(ticket), 200
-        abort(404)
+    def get_ticket(ticket_id: int) -> tuple[Response, int]:
+        ticket = next((t for t in TICKETS if t["id"] == ticket_id), None)
+        if ticket is None:
+            abort(404)
+        return jsonify(ticket), 200
 
     @app.errorhandler(404)
-    def not_found(_error):
+    def not_found(_error: Exception) -> tuple[Response, int]:
         return jsonify(error="not found", path=request.path), 404
 
     return app
@@ -68,4 +90,5 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8000")))
+    # Lancement local uniquement ; dans l'image, gunicorn écoute sur 0.0.0.0 (voir Dockerfile).
+    app.run(host=os.environ.get("HOST", "127.0.0.1"), port=int(os.environ.get("PORT", "8000")))

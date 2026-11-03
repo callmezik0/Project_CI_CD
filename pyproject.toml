@@ -1,0 +1,22 @@
+# Qualité du code Python : black (formatage) + ruff (toutes les règles activées).
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D203",   # incompatible avec D211 (pas de ligne vide avant la docstring de classe)
+    "D213",   # incompatible avec D212 (résumé sur la première ligne de la docstring)
+    "COM812", # conflit avec le formateur (virgule finale), déconseillé par ruff avec black
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",    # assert est la façon normale d'écrire un test pytest
+    "PLR2004", # codes HTTP (200, 404…) comparés directement dans les tests
+]

@@ -40,6 +40,10 @@ jobs:
           cache-dependency-path: requirements*.txt
       - name: Installer les dépendances
         run: python -m pip install -r requirements-dev.txt
+      - name: Vérifier le formatage (black)
+        run: python -m black --check --diff .
+      - name: Analyse statique (ruff, toutes les règles)
+        run: python -m ruff check --output-format github .
       - name: Exécuter les tests
         run: python -m pytest -q
 
