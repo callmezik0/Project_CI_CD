@@ -2,7 +2,8 @@ name: CI/CD NovaServices
 
 # PR vers main      : tests + construction + contrôle du conteneur. Aucune publication, aucun déploiement.
 # push sur main     : nouveaux contrôles, publication GHCR (tag = commit, digest conservé), déploiement préprod.
-# workflow_dispatch : redéploiement (avec échec simulé, étape 13) ou retour arrière manuel.
+# workflow_dispatch : redéploiement (avec échec simulé, étape 13), retour arrière manuel,
+#                     ou remise en service d'une version déjà publiée (redeploy + image_tag).
 on:
   pull_request:
     branches: [main]
@@ -11,10 +12,14 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "deploy = reconstruire et déployer main ; rollback = redéployer la version précédente"
+        description: "deploy = reconstruire et déployer main ; rollback = redéployer la version précédente ; redeploy = déployer une image déjà publiée (image_tag)"
         type: choice
-        options: [deploy, rollback]
+        options: [deploy, rollback, redeploy]
         default: deploy
+      image_tag:
+        description: "redeploy : tag GHCR d'une image déjà publiée (commit sur 12 caractères, ex. 124a8c7e51b1)"
+        type: string
+        default: ""
       simulate_failure:
         description: "TP étape 13 : démarrer la nouvelle version avec /health en échec"
         type: boolean
@@ -199,3 +204,79 @@ jobs:
           scp -i ~/.ssh/deploy_key -P "$SSH_PORT" -o StrictHostKeyChecking=yes deploy.sh "$USER_@$HOST:~/deploy.sh"
           echo "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" -o StrictHostKeyChecking=yes -o BatchMode=yes "$USER_@$HOST" \
             "read -r GHCR_TOKEN; export GHCR_TOKEN GHCR_USER=${{ github.actor }}; APP_PORT=$APP_PORT bash ~/deploy.sh rollback"
+
+  redeploy:
+    name: Remise en service d'une version publiée
+    # Aucune reconstruction : l'image a déjà passé tests et contrôles lors de sa publication.
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'redeploy' && vars.DEPLOY_HOST != ''
+    runs-on: ${{ vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
+    environment: preprod
+    concurrency:
+      group: deploy-preprod
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Vérifier le tag demandé
+        env:
+          TAG: ${{ inputs.image_tag }}
+        run: |
+          [[ "$TAG" =~ ^[0-9a-f]{12}$ ]] || { echo "::error::image_tag doit être un commit de 12 caractères hexadécimaux"; exit 1; }
+
+      - name: Se connecter à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Résoudre le digest du tag dans GHCR
+        id: resolve
+        env:
+          TAG: ${{ inputs.image_tag }}
+        run: |
+          IMAGE="ghcr.io/${GITHUB_REPOSITORY,,}"
+          DIGEST=$(docker buildx imagetools inspect "$IMAGE:$TAG" --format '{{json .Manifest}}' | jq -r .digest)
+          [[ "$DIGEST" == sha256:* ]] || { echo "::error::digest introuvable pour $IMAGE:$TAG"; exit 1; }
+          echo "Image : $IMAGE:$TAG -> $DIGEST"
+          { echo "image=$IMAGE"; echo "digest=$DIGEST"; } >> "$GITHUB_OUTPUT"
+
+      - name: Préparer la clé SSH et l'empreinte vérifiée de la VM
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+
+      - name: Déployer l'image par son digest sur la VM
+        env:
+          HOST: ${{ vars.DEPLOY_HOST }}
+          USER_: ${{ vars.DEPLOY_USER }}
+          SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+          APP_PORT: ${{ vars.APP_PORT || '8080' }}
+          IMAGE: ${{ steps.resolve.outputs.image }}
+          DIGEST: ${{ steps.resolve.outputs.digest }}
+          EXPECTED_SHA: ${{ inputs.image_tag }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SSH="ssh -i ~/.ssh/deploy_key -p $SSH_PORT -o StrictHostKeyChecking=yes -o BatchMode=yes"
+          scp -i ~/.ssh/deploy_key -P "$SSH_PORT" -o StrictHostKeyChecking=yes deploy.sh "$USER_@$HOST:~/deploy.sh"
+          echo "$GHCR_TOKEN" | $SSH "$USER_@$HOST" \
+            "read -r GHCR_TOKEN; export GHCR_TOKEN GHCR_USER=${{ github.actor }}; \
+             IMAGE=$IMAGE DIGEST=$DIGEST EXPECTED_SHA=$EXPECTED_SHA APP_PORT=$APP_PORT SIMULATE_FAILURE=0 \
+             bash ~/deploy.sh deploy"
+
+      - name: Contrôle depuis le runner (réseau jusqu'à la VM)
+        run: |
+          ./scripts/wait-for-http.sh "http://${{ vars.DEPLOY_HOST }}:${{ vars.APP_PORT || '8080' }}/version" 30 \
+            '"commit":"${{ inputs.image_tag }}"'
+          {
+            echo "### Version publiée remise en service"
+            echo "- Image : \`${{ steps.resolve.outputs.image }}:${{ inputs.image_tag }}\`"
+            echo "- Digest : \`${{ steps.resolve.outputs.digest }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
