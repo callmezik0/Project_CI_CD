@@ -12,7 +12,7 @@
 | 8 | Mise à jour V2 | [Run 41643890103](https://github.com/callmezik0/Project_CI_CD/actions/runs/41643890103) : V1 (`1.0.0`, `124a8c7e51b1`) → V2 (`2.0.0`, `b5e9d2d6fc41`) | ☑ |
 | 9 | Échec de déploiement | [Run 41644011581](https://github.com/callmezik0/Project_CI_CD/actions/runs/41644011581) `simulate_failure=true` : job rouge, 20 × 503 dans les journaux, « RETOUR ARRIÈRE » vers la V2 saine | ☑ |
 | 10 | Rollback | Auto : run 41644011581 (V2 rétablie, `/health` 200). Manuel : [run 41644315825](https://github.com/callmezik0/Project_CI_CD/actions/runs/41644315825) `action=rollback` → `/version` `1.0.0` | ☑ |
-| 11 | Explication du parcours | Section « Parcours » du README, à expliquer par chacun | ☐ |
+| 11 | Explication du parcours | Section « Parcours » du README + [`docs/ORAL_PARCOURS.md`](ORAL_PARCOURS.md) (schémas, rôle des fichiers, texte d'oral), à expliquer par chacun | ☐ |
 
 ## Lien régression ↔ test (à savoir expliquer)
 Le commit de régression change `/tickets` pour renvoyer `{"items": [...]}` au lieu d'une liste.
