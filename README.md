@@ -8,6 +8,7 @@ Application Flask minimale (données fictives) et chaîne CI/CD complète :
 | `GET /health` | Contrôle de disponibilité (200, ou 503 si `SIMULATE_FAILURE=1`) |
 | `GET /version` | `{"service","version","commit"}` — prouve quelle version tourne |
 | `GET /tickets` · `GET /tickets/<id>` | Route métier (V2 : `?status=open`) |
+| `GET /` | V2.1 : interface web de démonstration (version, commit, état du service, tickets filtrables), rafraîchie toutes les 3 s |
 
 ## Choix d'architecture (et pourquoi)
 
@@ -41,6 +42,7 @@ Application Flask minimale (données fictives) et chaîne CI/CD complète :
 
 ```
 app.py                       API Flask
+static/index.html            Interface web (V2.1), servie sur / et branchée sur l'API
 tests/test_app.py            7 tests de comportement
 requirements*.txt            Dépendances fixées (exécution / dev)
 VERSION                      Version applicative (1.0.0 → 2.0.0)

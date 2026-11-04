@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NovaServices · Tickets</title>
+<style>
+  :root {
+    --bg: #F4F1EA; --card: #FBFAF6; --line: #D9D2C3; --ink: #14213D; --muted: #4A5568;
+    --navy: #0F1B2D; --orange: #F59E42; --orange-ink: #A64B06; --blue: #1D5FD1; --ok: #1F7A4D; --ko: #B42318;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+  header { background: var(--navy); color: #F4F1EA; padding: 20px 24px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  .top { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
+  h1 { margin: 0; font-size: 24px; letter-spacing: .3px; }
+  h1 span { color: var(--orange); }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+           font-size: 14px; font-weight: 600; background: #16263D; color: #C9D4E3; border: 1px solid #2A3B55; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #8FA3BF; }
+  .badge.ok .dot { background: #3DD68C; } .badge.ko { color: #FFD7D2; border-color: var(--ko); } .badge.ko .dot { background: #FF6B5E; }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; }
+  main { padding: 24px 16px 48px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+  .bar button { font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+                border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  .bar button[aria-pressed="true"] { background: var(--ink); color: #F4F1EA; border-color: var(--ink); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  th { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); }
+  tr:last-child td { border-bottom: none; }
+  .pill { display: inline-block; white-space: nowrap; padding: 2px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+  .s-open { background: #FCE7D2; color: var(--orange-ink); }
+  .s-in_progress { background: #E6EEFB; color: var(--blue); }
+  .s-closed { background: #E7E3DA; color: var(--muted); }
+  .p-high { color: var(--ko); font-weight: 600; } .p-medium { color: var(--orange-ink); } .p-low { color: var(--muted); }
+  .empty, .err { padding: 24px 16px; color: var(--muted); }
+  .err { color: var(--ko); }
+  footer { margin-top: 16px; font-size: 13px; color: var(--muted); }
+  @media (max-width: 560px) { th:nth-child(1), td:nth-child(1) { display: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap top">
+    <h1>Nova<span>Services</span> · Tickets</h1>
+    <div class="badges">
+      <span class="badge" id="health"><span class="dot"></span><span id="health-txt">…</span></span>
+      <span class="badge"><span>Version</span> <code id="version">…</code></span>
+      <span class="badge"><span>Commit</span> <code id="commit">…</code></span>
+    </div>
+  </div>
+</header>
+<main class="wrap">
+  <div class="bar" role="group" aria-label="Filtrer par statut">
+    <button type="button" data-status="" aria-pressed="true">Tous</button>
+    <button type="button" data-status="open" aria-pressed="false">Ouverts</button>
+    <button type="button" data-status="in_progress" aria-pressed="false">En cours</button>
+    <button type="button" data-status="closed" aria-pressed="false">Fermés</button>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>#</th><th>Ticket</th><th>Statut</th><th>Priorité</th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div id="msg" class="empty" hidden></div>
+  </div>
+  <footer>Données fictives en mémoire · état du service rafraîchi toutes les 3 s · API : <code>/health</code>, <code>/version</code>, <code>/tickets</code></footer>
+</main>
+<script>
+  "use strict";
+  const STATUS = { open: "Ouvert", in_progress: "En cours", closed: "Fermé" };
+  const PRIORITY = { high: "Haute", medium: "Moyenne", low: "Basse" };
+  let filter = "";
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  async function refreshStatus() {
+    const badge = document.getElementById("health");
+    const txt = document.getElementById("health-txt");
+    try {
+      const h = await fetch("health", { cache: "no-store" });
+      badge.className = "badge " + (h.ok ? "ok" : "ko");
+      txt.textContent = h.ok ? "En service" : "En panne (" + h.status + ")";
+      const v = await (await fetch("version", { cache: "no-store" })).json();
+      document.getElementById("version").textContent = v.version;
+      document.getElementById("commit").textContent = v.commit;
+    } catch (e) {
+      badge.className = "badge ko";
+      txt.textContent = "Injoignable";
+    }
+  }
+
+  async function loadTickets() {
+    const rows = document.getElementById("rows");
+    const msg = document.getElementById("msg");
+    try {
+      const url = filter ? "tickets?status=" + encodeURIComponent(filter) : "tickets";
+      const tickets = await (await fetch(url, { cache: "no-store" })).json();
+      rows.replaceChildren();
+      for (const t of tickets) {
+        const tr = el("tr");
+        tr.append(el("td", "", String(t.id)), el("td", "", t.title));
+        const st = el("td"); st.append(el("span", "pill s-" + t.status, STATUS[t.status] || t.status));
+        tr.append(st, el("td", "p-" + t.priority, PRIORITY[t.priority] || t.priority));
+        rows.append(tr);
+      }
+      msg.hidden = tickets.length > 0;
+      msg.className = "empty";
+      msg.textContent = "Aucun ticket pour ce statut.";
+    } catch (e) {
+      rows.replaceChildren();
+      msg.hidden = false;
+      msg.className = "err";
+      msg.textContent = "Impossible de charger les tickets.";
+    }
+  }
+
+  document.querySelectorAll(".bar button").forEach((b) => {
+    b.addEventListener("click", () => {
+      filter = b.dataset.status;
+      document.querySelectorAll(".bar button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      loadTickets();
+    });
+  });
+
+  refreshStatus();
+  loadTickets();
+  setInterval(refreshStatus, 3000);
+</script>
+</body>
+</html>

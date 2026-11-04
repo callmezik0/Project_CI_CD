@@ -49,6 +49,11 @@ def create_app() -> Flask:
     # Interrupteur réservé au TP (étape 13) : simule un service qui ne passe pas le contrôle HTTP.
     app.config["SIMULATE_FAILURE"] = os.environ.get("SIMULATE_FAILURE", "0") == "1"
 
+    @app.get("/")
+    def index() -> Response:
+        # Interface web de démonstration (fichier statique qui interroge l'API).
+        return app.send_static_file("index.html")
+
     @app.get("/health")
     def health() -> tuple[Response, int]:
         if app.config["SIMULATE_FAILURE"]:
