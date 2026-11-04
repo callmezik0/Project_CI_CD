@@ -52,7 +52,7 @@ deploy.sh                    Exécuté SUR la VM : pull par digest, démarrage, 
 scripts/wait-for-http.sh     Attente HTTP avec durée maximale
 scripts/protect-main.sh      Protection de main (contrôles requis, pas de contournement)
 scripts/setup-github.sh      Environnement preprod : variables, secrets, empreinte SSH
-docs/                        Fiche de choix, preuves, journaux de répétition
+docs/                        Fiche de choix, preuves, support d'oral (schémas), journaux de répétition
 ```
 
 ---
@@ -165,3 +165,5 @@ la V1), puis la V2 (`image_tag` = commit de la V2), avant l'échec simulé et le
 5. **Contrôle** : `/health` puis `/version` = commit attendu, sinon retour au digest précédent et job rouge.
 
 GitHub conserve le code · GHCR conserve les images · la VM exécute l'application · le runner exécute les jobs.
+
+Version détaillée avec schémas, rôle de chaque fichier et questions probables : [`docs/ORAL_PARCOURS.md`](docs/ORAL_PARCOURS.md).
