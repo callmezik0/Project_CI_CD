@@ -3,7 +3,8 @@ name: CI/CD NovaServices
 # PR vers main      : tests + construction + contrôle du conteneur. Aucune publication, aucun déploiement.
 # push sur main     : nouveaux contrôles, publication GHCR (tag = commit, digest conservé), déploiement préprod.
 # workflow_dispatch : redéploiement (avec échec simulé, étape 13), retour arrière manuel,
-#                     ou remise en service d'une version déjà publiée (redeploy + image_tag).
+#                     ou remise en service d'une version déjà publiée (redeploy + image_tag),
+#                     ou activation de HTTPS devant l'application (https).
 on:
   pull_request:
     branches: [main]
@@ -14,7 +15,7 @@ on:
       action:
         description: "deploy = reconstruire et déployer main ; rollback = redéployer la version précédente ; redeploy = déployer une image déjà publiée (image_tag)"
         type: choice
-        options: [deploy, rollback, redeploy]
+        options: [deploy, rollback, redeploy, https]
         default: deploy
       image_tag:
         description: "redeploy : tag GHCR d'une image déjà publiée (commit sur 12 caractères, ex. 124a8c7e51b1)"
@@ -280,4 +281,54 @@ jobs:
             echo "### Version publiée remise en service"
             echo "- Image : \`${{ steps.resolve.outputs.image }}:${{ inputs.image_tag }}\`"
             echo "- Digest : \`${{ steps.resolve.outputs.digest }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  https:
+    name: Activation HTTPS (Caddy)
+    # Caddy devant l'application : certificat Let's Encrypt automatique, HTTP redirigé vers HTTPS.
+    # Domaine : variable PUBLIC_DOMAIN, sinon <IP avec des tirets>.sslip.io (pointe vers DEPLOY_HOST).
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'https' && vars.DEPLOY_HOST != ''
+    runs-on: ${{ vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
+    environment: preprod
+    concurrency:
+      group: deploy-preprod
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Préparer la clé SSH et l'empreinte vérifiée de la VM
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts && chmod 644 ~/.ssh/known_hosts
+
+      - name: Installer Caddy sur la VM
+        env:
+          HOST: ${{ vars.DEPLOY_HOST }}
+          USER_: ${{ vars.DEPLOY_USER }}
+          SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+          APP_PORT: ${{ vars.APP_PORT || '8080' }}
+          PUBLIC_DOMAIN: ${{ vars.PUBLIC_DOMAIN }}
+        run: |
+          DOMAIN="${PUBLIC_DOMAIN:-${HOST//./-}.sslip.io}"
+          echo "DOMAIN=$DOMAIN" >> "$GITHUB_ENV"
+          scp -i ~/.ssh/deploy_key -P "$SSH_PORT" -o StrictHostKeyChecking=yes scripts/setup-https.sh "$USER_@$HOST:~/setup-https.sh"
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" -o StrictHostKeyChecking=yes -o BatchMode=yes "$USER_@$HOST" \
+            "DOMAIN=$DOMAIN APP_PORT=$APP_PORT bash ~/setup-https.sh"
+
+      - name: Contrôle HTTPS depuis le runner (certificat vérifié)
+        run: |
+          # curl vérifie le certificat : un certificat absent ou invalide fait échouer le contrôle.
+          ./scripts/wait-for-http.sh "https://$DOMAIN/version" 120 '"service":"novaservices-tickets"'
+          echo "Redirection HTTP :"; curl -sS -o /dev/null -w '%{http_code} -> %{redirect_url}\n' "http://$DOMAIN/"
+          echo "Certificat :"; echo | openssl s_client -connect "$DOMAIN:443" -servername "$DOMAIN" 2>/dev/null \
+            | openssl x509 -noout -subject -issuer -enddate
+          {
+            echo "### HTTPS actif"
+            echo "- URL : https://$DOMAIN/"
           } >> "$GITHUB_STEP_SUMMARY"

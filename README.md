@@ -51,6 +51,7 @@ deploy.sh                    Exécuté SUR la VM : pull par digest, démarrage, 
 .github/workflows/ci-cd.yml  Pipeline CI/CD
 scripts/wait-for-http.sh     Attente HTTP avec durée maximale
 scripts/demo-watch.sh        Démo : état du service (/health, /version) en continu
+scripts/setup-https.sh       Exécuté SUR la VM : Caddy + certificat Let's Encrypt (HTTPS)
 scripts/protect-main.sh      Protection de main (contrôles requis, pas de contournement)
 scripts/setup-github.sh      Environnement preprod : variables, secrets, empreinte SSH
 docs/                        Fiche de choix, preuves, support d'oral (schémas), script de démo (DEMO.md), journaux de répétition
@@ -157,6 +158,18 @@ version précédente : remettre d'abord la V1 en service (`action=redeploy`, `im
 la V1), puis la V2 (`image_tag` = commit de la V2), avant l'échec simulé et le retour arrière.
 
 ---
+
+## Bonus – HTTPS devant l'application
+L'application reste servie en HTTP sur le port 8080 (contrôles du pipeline). Pour un accès chiffré,
+**Caddy** est placé devant elle sur la VM (`scripts/setup-https.sh`, lancé par *Run workflow* avec
+`action=https`) :
+- domaine `16-192-44-255.sslip.io` (service gratuit qui renvoie l'IP contenue dans le nom ; une
+  variable `PUBLIC_DOMAIN` permet d'utiliser un vrai domaine) ;
+- certificat **Let's Encrypt** obtenu et renouvelé automatiquement, HTTP (80) redirigé vers HTTPS (443) ;
+- en-têtes de sécurité : HSTS, `X-Content-Type-Options`, `Referrer-Policy`.
+
+Le job vérifie depuis le runner que `https://…/version` répond avec un certificat valide.
+Prérequis : ports 80 et 443 ouverts dans le groupe de sécurité de la VM. Adresse : https://16-192-44-255.sslip.io/
 
 ## Parcours à savoir expliquer
 1. **Commit** sur une branche → **PR** : la CI teste le code et vérifie que l'image démarre ; rien n'est publié.
