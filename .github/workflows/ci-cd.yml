@@ -286,7 +286,8 @@ jobs:
   https:
     name: Activation HTTPS (Caddy)
     # Caddy devant l'application : certificat Let's Encrypt automatique, HTTP redirigé vers HTTPS.
-    # Domaine : variable PUBLIC_DOMAIN, sinon <IP avec des tirets>.sslip.io (pointe vers DEPLOY_HOST).
+    # Adresse : variable PUBLIC_DOMAIN si elle existe, sinon l'IP de la VM (DEPLOY_HOST) avec un
+    # certificat Let's Encrypt d'adresse IP (profil shortlived, renouvelé par Caddy).
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'https' && vars.DEPLOY_HOST != ''
     runs-on: ${{ vars.DEPLOY_RUNNER || 'ubuntu-24.04' }}
     environment: preprod
@@ -315,20 +316,30 @@ jobs:
           APP_PORT: ${{ vars.APP_PORT || '8080' }}
           PUBLIC_DOMAIN: ${{ vars.PUBLIC_DOMAIN }}
         run: |
-          DOMAIN="${PUBLIC_DOMAIN:-${HOST//./-}.sslip.io}"
+          DOMAIN="${PUBLIC_DOMAIN:-$HOST}"
           echo "DOMAIN=$DOMAIN" >> "$GITHUB_ENV"
           scp -i ~/.ssh/deploy_key -P "$SSH_PORT" -o StrictHostKeyChecking=yes scripts/setup-https.sh "$USER_@$HOST:~/setup-https.sh"
           ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" -o StrictHostKeyChecking=yes -o BatchMode=yes "$USER_@$HOST" \
-            "DOMAIN=$DOMAIN APP_PORT=$APP_PORT bash ~/setup-https.sh"
+            "ADDRESS=$DOMAIN APP_PORT=$APP_PORT bash ~/setup-https.sh"
 
       - name: Contrôle HTTPS depuis le runner (certificat vérifié)
         run: |
           # curl vérifie le certificat : un certificat absent ou invalide fait échouer le contrôle.
           ./scripts/wait-for-http.sh "https://$DOMAIN/version" 120 '"service":"novaservices-tickets"'
           echo "Redirection HTTP :"; curl -sS -o /dev/null -w '%{http_code} -> %{redirect_url}\n' "http://$DOMAIN/"
-          echo "Certificat :"; echo | openssl s_client -connect "$DOMAIN:443" -servername "$DOMAIN" 2>/dev/null \
-            | openssl x509 -noout -subject -issuer -enddate
+          echo "Certificat :"; echo | openssl s_client -connect "$DOMAIN:443" 2>/dev/null \
+            | openssl x509 -noout -subject -ext subjectAltName -issuer -enddate
           {
             echo "### HTTPS actif"
             echo "- URL : https://$DOMAIN/"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Journaux de Caddy (en cas d'échec)
+        if: failure()
+        env:
+          HOST: ${{ vars.DEPLOY_HOST }}
+          USER_: ${{ vars.DEPLOY_USER }}
+          SSH_PORT: ${{ vars.DEPLOY_SSH_PORT || '22' }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" -o StrictHostKeyChecking=yes -o BatchMode=yes "$USER_@$HOST" \
+            "cat ~/caddy/Caddyfile; docker logs --tail 60 caddy" || true
