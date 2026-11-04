@@ -27,7 +27,7 @@ Une nouvelle fusion sur `main` change le commit en service : **noter le commit a
 | Dépôt | https://github.com/callmezik0/Project_CI_CD |
 | Actions | https://github.com/callmezik0/Project_CI_CD/actions/workflows/ci-cd.yml |
 | Protection de `main` | https://github.com/callmezik0/Project_CI_CD/settings/branches |
-| Interface (démo B) | https://16-192-44-255.sslip.io/ (ou http://16.192.44.255:8080/) |
+| Interface (démo B) | https://16.192.44.255/ (ou http://16.192.44.255:8080/) |
 | Terminal | `./scripts/demo-watch.sh` |
 
 ```bash
@@ -88,7 +88,7 @@ Retour en **2.1.0**, image reprise telle quelle dans GHCR, sans reconstruction.
 
 ### B1. La page (1 min)
 
-Ouvrir https://16-192-44-255.sslip.io/ (cadenas : certificat Let's Encrypt) : badge vert **En service**, **version 2.1.0**, **commit** en
+Ouvrir https://16.192.44.255/ (cadenas : certificat Let's Encrypt) : badge vert **En service**, **version 2.1.0**, **commit** en
 service ; cliquer *Ouverts*, *En cours*, *Fermés*. Ouvrir `/version` à côté : même commit.
 
 ### B2. Comment elle est arrivée là (1 min)
