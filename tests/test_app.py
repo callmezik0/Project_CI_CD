@@ -64,3 +64,14 @@ def test_tickets_can_be_filtered_by_status(client: FlaskClient) -> None:
     assert resp.status_code == 200
     assert [t["id"] for t in resp.get_json()] == [1]
     assert client.get("/tickets?status=unknown").get_json() == []
+
+
+def test_home_page_serves_web_interface(client: FlaskClient) -> None:
+    """V2.1 : / sert l'interface web, qui s'appuie sur l'API (/health, /version, /tickets)."""
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert resp.mimetype == "text/html"
+    page = resp.get_data(as_text=True)
+    assert "NovaServices" in page
+    for endpoint in ('fetch("health"', 'fetch("version"', '"tickets'):
+        assert endpoint in page
