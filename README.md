@@ -50,9 +50,10 @@ Dockerfile, .dockerignore    Image d'exécution
 deploy.sh                    Exécuté SUR la VM : pull par digest, démarrage, contrôle, rollback
 .github/workflows/ci-cd.yml  Pipeline CI/CD
 scripts/wait-for-http.sh     Attente HTTP avec durée maximale
+scripts/demo-watch.sh        Démo : état du service (/health, /version) en continu
 scripts/protect-main.sh      Protection de main (contrôles requis, pas de contournement)
 scripts/setup-github.sh      Environnement preprod : variables, secrets, empreinte SSH
-docs/                        Fiche de choix, preuves, support d'oral (schémas), journaux de répétition
+docs/                        Fiche de choix, preuves, support d'oral (schémas), script de démo (DEMO.md), journaux de répétition
 ```
 
 ---
