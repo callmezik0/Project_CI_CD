@@ -43,9 +43,9 @@ Application Flask minimale (données fictives) et chaîne CI/CD complète :
 ```
 app.py                       API Flask
 static/index.html            Interface web (V2.1), servie sur / et branchée sur l'API
-tests/test_app.py            7 tests de comportement
+tests/test_app.py            8 tests de comportement
 requirements*.txt            Dépendances fixées (exécution / dev)
-VERSION                      Version applicative (1.0.0 → 2.0.0)
+VERSION                      Version applicative (1.0.0 → 2.0.0 → 2.1.0)
 Dockerfile, .dockerignore    Image d'exécution
 deploy.sh                    Exécuté SUR la VM : pull par digest, démarrage, contrôle, rollback
 .github/workflows/ci-cd.yml  Pipeline CI/CD
