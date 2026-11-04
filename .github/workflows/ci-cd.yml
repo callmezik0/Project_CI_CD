@@ -87,6 +87,7 @@ jobs:
           docker run -d --name smoke -p 8080:8000 ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.sha }}
           ./scripts/wait-for-http.sh http://localhost:8080/health 30 '"status":"ok"'
           ./scripts/wait-for-http.sh http://localhost:8080/version 5 '"commit":"${{ steps.meta.outputs.sha }}"'
+          curl -fsS http://localhost:8080/ | grep -q 'NovaServices' && echo "OK  interface web servie sur /"
 
       - name: Journaux du conteneur
         if: always()
